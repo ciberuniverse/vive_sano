@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block contenido %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      
+      <!-- Mensaje de éxito -->
+      <div class="alert alert-success d-flex align-items-center shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-3 fs-3"></i>
+        <div>
+          <h4 class="alert-heading">¡Pedido creado y agendado correctamente!</h4>
+          <p class="mb-0">Revisa tu pedido para saber en qué estado se encuentra y seguir su progreso.</p>
+        </div>
+      </div>
+
+      <!-- Detalle del pedido -->
+      <div class="card shadow-sm mt-4">
+        <div class="card-header bg-primary text-white">
+          Detalles del pedido
+        </div>
+        <div class="card-body">
+          <p><strong>Pedido:</strong> {{ pedido }}</p>
+          <p><strong>Total:</strong> {{ total }}</p>
+        </div>
+      </div>
+
+      <!-- Acción -->
+      <div class="text-center mt-4">
+        <a href="mis-pedidos/" class="btn btn-outline-primary">
+          Revisar pedido
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+    localStorage.clear()
+</script>
+
+{% endblock %}

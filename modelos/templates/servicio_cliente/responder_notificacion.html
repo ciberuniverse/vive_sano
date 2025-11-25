@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block contenido %}
+<div class="container mt-4">
+  <h2 class="mb-4">Responder notificación #{{ notificacion.id }}</h2>
+
+  <!-- Mensaje original -->
+  <div class="alert alert-info shadow-sm">
+    <strong>Mensaje recibido:</strong><br>
+    {{ notificacion.mensaje }}
+  </div>
+
+  <!-- Formulario de respuesta -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="post" class="row g-3">
+        {% csrf_token %}
+
+        <!-- Selección de respuesta -->
+        <div class="col-12">
+          <label for="respuesta" class="form-label">Respuesta</label>
+          <select name="respuesta" id="respuesta" class="form-select">
+            <option value="ACEPTADO">Aceptar</option>
+            <option value="RECHAZADO">Rechazar</option>
+          </select>
+        </div>
+
+        <!-- Comentario -->
+        <div class="col-12">
+          <label for="texto" class="form-label">Comentario</label>
+          <textarea name="texto" id="texto" rows="4" class="form-control"></textarea>
+        </div>
+
+        <!-- Botón -->
+        <div class="col-12 text-end">
+          <button type="submit" class="btn btn-success">Enviar respuesta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

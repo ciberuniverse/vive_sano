@@ -71,6 +71,8 @@ TEMPLATES = [
     },
 ]
 
+
+LOGIN_URL = "/iniciar_sesion/"
 WSGI_APPLICATION = 'vive_sano.wsgi.application'
 
 

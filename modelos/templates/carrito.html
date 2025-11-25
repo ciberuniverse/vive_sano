@@ -52,7 +52,7 @@
         <form id="formSolicitar" method="post">
           {% csrf_token %}
           <input type="hidden" name="carrito" id="carrito_hidden" value='{{ carrito_raw|escapejs }}'>
-          <button type="submit" class="btn btn-success w-100 mb-2">
+          <button type="submit" class="btn btn-success w-100 mb-2" name="accion" value="enviar_pedido">
             <span class="material-symbols-outlined align-middle">shopping_cart</span>
             Solicitar pedido
           </button>

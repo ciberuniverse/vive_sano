@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+<div class="container mt-4">
+
+    <!-- Encabezado -->
+    <div class="mb-4">
+        <h3 class="fw-bold">Enviar notificación al cliente</h3>
+        <p class="mb-1"><strong>Pedido #{{ pedido.id }}</strong></p>
+    </div>
+
+    <!-- Productos solicitados -->
+    <h4 class="mb-3">Productos solicitados</h4>
+    <ul class="list-group mb-4">
+        {% for d in detalle %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>{{ d.producto.nombre }} <span class="badge bg-secondary">x{{ d.cantidad }}</span></span>
+            <span class="fw-bold">${{ d.precio_unitario }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Formulario de notificación -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="POST" class="row g-3">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <div class="col-12">
+                    <button class="btn btn-success w-100">Enviar notificación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Historial de notificaciones -->
+    <h5 class="fw-bold mb-3">Historial Adjudicado al Pedido</h5>
+    {% if notificaciones %}
+        <div class="list-group">
+            {% for n in notificaciones %}
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <small class="text-muted">{{ n.fecha_envio|date:"d/m/Y H:i" }}</small>
+                    <span class="badge 
+                        {% if n.estado_respuesta == 'ACEPTADO' %}bg-success
+                        {% elif n.estado_respuesta == 'RECHAZADO' %}bg-danger
+                        {% else %}bg-secondary{% endif %}">
+                        {{ n.get_estado_respuesta_display }}
+                    </span>
+                </div>
+                <h6 class="mb-1">{{ n.get_tipo_display }}</h6>
+                <p class="mb-1">{{ n.mensaje }}</p>
+                {% if n.respuesta_texto %}
+                    <small class="text-muted">Respuesta: {{ n.respuesta_texto }}</small>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            Aún no hay notificaciones para este pedido.
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

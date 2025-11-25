@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+
+<div class="container mt-5">
+  <div class="row justify-content-center" id="iniciar_sesion_div">
+    <div class="col-md-6">
+      <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Iniciar Sesión</h5>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="usuario" class="form-label">Usuario</label>
+              <input type="text" class="form-control" id="usuario" name="usuario" placeholder="Usuario" required>
+            </div>
+            <div class="mb-3">
+              <label for="contrasena" class="form-label">Contraseña</label>
+              <input type="password" class="form-control" id="contrasena" name="contrasena" placeholder="Contraseña" required>
+            </div>
+            <button type="submit" name="accion" value="iniciar_sesion" class="btn btn-primary w-100 mb-2">
+              Iniciar Sesión
+            </button>
+            <div class="text-center">
+              <a href="#" onclick="mostrar_ocultar()" class="small text-muted">¿No tienes cuenta? Regístrate aquí</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row justify-content-center" id="crear_cuenta_div">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">Crear Cuenta</h5>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+              <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                  <div class="form-text">{{ field.help_text }}</div>
+                {% endif %}
+                {% for error in field.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-success w-100 mb-2" name="accion" value="crear_cuenta">
+              Registrarse
+            </button>
+            <div class="text-center">
+              <a href="#" onclick="mostrar_ocultar()" class="small text-muted">¿Ya tienes cuenta? Inicia sesión aquí</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let ui_login = 1;
+  document.getElementById("crear_cuenta_div").style.display = "none";
+
+  function mostrar_ocultar() {
+    if (ui_login === 1) {
+      ui_login = 0;
+      document.getElementById("iniciar_sesion_div").style.display = "none";
+      document.getElementById("crear_cuenta_div").style.display = "block";
+    } else {
+      ui_login = 1;
+      document.getElementById("iniciar_sesion_div").style.display = "block";
+      document.getElementById("crear_cuenta_div").style.display = "none";
+    }
+  }
+</script>
+
+{% endblock %}

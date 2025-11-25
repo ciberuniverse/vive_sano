@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block contenido %}
+<div class="container mt-4">
+  <h2 class="mb-3">Mis pedidos</h2>
+
+  {% if pedidos %}
+    {% for item in pedidos %}
+      <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Pedido #{{ item.pedido.id }}</h5>
+          <p class="text-muted">Fecha: {{ item.pedido.fecha_creacion|date:"d/m/Y H:i" }}</p>
+          <p><strong>Estado:</strong> {{ item.pedido.estado }}</p>
+
+          <h6>Detalles:</h6>
+          <ul class="list-group">
+            {% for d in item.detalles %}
+              <li class="list-group-item d-flex justify-content-between">
+                <span>{{ d.producto.nombre }} (x{{ d.cantidad }})</span>
+                <span>${{ d.precio_unitario }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <a href="{% url 'responder_mensaje_cliente' item.pedido.id %}">Ver Notificaciones</a>
+
+    {% endfor %}
+  {% else %}
+    <p class="text-muted">No tienes pedidos aún.</p>
+  {% endif %}
+</div>
+{% endblock %}

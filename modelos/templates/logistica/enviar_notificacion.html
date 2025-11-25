@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block contenido %}
+<div class="container mt-4">
+  <h2 class="mb-4">Enviar notificación - Pedido #{{ pedido.id }}</h2>
+
+  <!-- Formulario de envío -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form method="post" class="mb-3">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Enviar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Listado de notificaciones -->
+  <h3 class="mb-3">Historial de notificaciones</h3>
+  {% if notificaciones %}
+    <ul class="list-group">
+      {% for notificacion in notificaciones %}
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+          <div class="ms-2 me-auto">
+            <div class="fw-bold">
+              {{ notificacion.get_tipo_display }}
+              <span class="badge 
+                {% if notificacion.estado_respuesta == 'ACEPTADO' %}bg-success
+                {% elif notificacion.estado_respuesta == 'RECHAZADO' %}bg-danger
+                {% else %}bg-secondary{% endif %}
+                ms-2">
+                {{ notificacion.get_estado_respuesta_display }}
+              </span>
+            </div>
+            <p class="mb-1"><strong>Mensaje:</strong> {{ notificacion.mensaje }}</p>
+            <small>
+              Remitente: {{ notificacion.remitente|default:"-" }} |
+              Destinatario: {{ notificacion.destinatario|default:"-" }} |
+              Fecha envío: {{ notificacion.fecha_envio|date:"d/m/Y H:i" }}
+            </small>
+            {% if notificacion.respuesta_texto %}
+              <p class="mt-2 mb-0"><strong>Respuesta:</strong> {{ notificacion.respuesta_texto }}</p>
+              <small>Fecha respuesta: {{ notificacion.fecha_respuesta|date:"d/m/Y H:i" }}</small>
+            {% endif %}
+          </div>
+          {% if notificacion.leida %}
+            <span class="badge bg-success rounded-pill">Leída</span>
+          {% else %}
+            <span class="badge bg-warning text-dark rounded-pill">No leída</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="alert alert-info text-center">
+      No hay notificaciones registradas para este pedido.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

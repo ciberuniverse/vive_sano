@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container mt-4">
+  <div class="alert alert-danger d-flex align-items-start" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-3 fs-3"></i>
+    <div>
+      <h4 class="alert-heading">Se ha producido un error</h4>
+      <p class="mb-1"><strong>Código:</strong> {{ codigo }}</p>
+      <p class="mb-3"><strong>Mensaje:</strong> {{ mensaje }}</p>
+      <a href="/inicio" class="btn btn-primary">
+        Volver al menú
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

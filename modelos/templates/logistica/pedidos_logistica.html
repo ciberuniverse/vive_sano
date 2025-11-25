@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+
+{% if pedidos %}
+<div class="container mt-4">
+  <div class="row">
+
+    <!-- Formulario de filtro -->
+    <div class="col-12 mb-4">
+      <form method="POST" class="d-flex gap-2">
+        {% csrf_token %}
+        {{ form }}
+        <button type="submit" class="btn btn-outline-primary">Filtrar</button>
+      </form>
+    </div>
+
+    <!-- Listado de pedidos -->
+    {% for pedido in pedidos %}
+      <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+          <div class="card-header bg-primary text-white">
+            Pedido #{{ pedido.id|default:"Información no disponible" }}
+          </div>
+          <div class="card-body">
+            
+            <p><strong>Cliente:</strong> 
+              {% if pedido.cliente %}
+                {{ pedido.cliente }}
+              {% else %}
+                Información no disponible
+              {% endif %}
+            </p>
+
+            <p><strong>Estado:</strong> 
+              {% if pedido.estado %}
+                {{ pedido.estado }}
+              {% else %}
+                Información no disponible
+              {% endif %}
+            </p>
+
+            <p><strong>Tiempo de despacho:</strong> 
+              {% if pedido.tiempo_despacho %}
+                {{ pedido.tiempo_despacho }}
+              {% else %}
+                Información no disponible
+              {% endif %}
+            </p>
+
+            <p><strong>Almacenamiento especial:</strong> 
+              {% if pedido.alacenamiento_especial %}
+                {{ pedido.alacenamiento_especial }}
+              {% else %}
+                Información no disponible
+              {% endif %}
+            </p>
+
+            <p><strong>Observaciones:</strong> 
+              {% if pedido.observaciones %}
+                {{ pedido.observaciones }}
+              {% else %}
+                Información no disponible
+              {% endif %}
+            </p>
+
+            <!-- Botón de acción -->
+            <div class="text-end">
+              <button type="button" class="btn btn-sm btn-outline-success" 
+                      onclick="redirect('{{ pedido.id }}')">
+                Revisar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="alert alert-warning text-center">
+          No hay pedidos disponibles.
+        </div>
+      </div>
+    {% endfor %}
+
+  </div>
+</div>
+
+<script>
+    function redirect(url) {
+        window.location.href = window.location.href + url + "/";  // redirige a la URL indicada
+    }
+</script>
+
+{% endif %}
+
+{% endblock %}
