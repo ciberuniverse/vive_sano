@@ -39,29 +39,44 @@
   <!-- Historial de mensajes -->
   <h5 class="fw-bold mb-3">Historial de mensajes</h5>
   {% if mensajes %}
-    <ul class="list-group">
-      {% for mensaje in mensajes %}
-        <li class="list-group-item">
-          <div class="d-flex justify-content-between">
-            <strong>{{ mensaje.get_tipo_display }}</strong>
-            <small class="text-muted">{{ mensaje.fecha_envio|date:"d/m/Y H:i" }}</small>
-          </div>
-          <p class="mb-1">{{ mensaje.mensaje }}</p>
-          {% if mensaje.respuesta_texto %}
-            <div class="mt-2">
-              <span class="badge 
-                {% if mensaje.estado_respuesta == 'ACEPTADO' %}bg-success
-                {% elif mensaje.estado_respuesta == 'RECHAZADO' %}bg-danger
-                {% else %}bg-secondary{% endif %}">
-                {{ mensaje.get_estado_respuesta_display }}
-              </span>
-              <p class="mb-0"><small>Respuesta: {{ mensaje.respuesta_texto }}</small></p>
-              <small class="text-muted">Fecha respuesta: {{ mensaje.fecha_respuesta|date:"d/m/Y H:i" }}</small>
-            </div>
-          {% endif %}
-        </li>
-      {% endfor %}
-    </ul>
+<ul class="list-group">
+  {% for mensaje in mensajes %}
+    <li class="list-group-item">
+      <!-- Encabezado con tipo y fecha -->
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <strong class="text-primary">{{ mensaje.get_tipo_display }}</strong>
+        <small class="text-muted">{{ mensaje.fecha_envio|date:"d/m/Y H:i" }}</small>
+      </div>
+
+      <!-- Mensaje principal -->
+      <p class="mb-2">{{ mensaje.mensaje }}</p>
+
+      <!-- Respuesta (si existe) -->
+      {% if mensaje.respuesta_texto %}
+        <div class="border rounded p-2 mb-2 bg-light">
+          <span class="badge 
+            {% if mensaje.estado_respuesta == 'ACEPTADO' %}bg-success
+            {% elif mensaje.estado_respuesta == 'RECHAZADO' %}bg-danger
+            {% else %}bg-secondary{% endif %}">
+            {{ mensaje.get_estado_respuesta_display }}
+          </span>
+          <p class="mb-1"><small><strong>Respuesta:</strong> {{ mensaje.respuesta_texto }}</small></p>
+          <small class="text-muted">Fecha respuesta: {{ mensaje.fecha_respuesta|date:"d/m/Y H:i" }}</small>
+        </div>
+      {% endif %}
+
+      <!-- Información adicional -->
+      <small class="d-block text-muted mb-2">
+        Remitente: {{ mensaje.remitente|default:"-" }} |
+        Destinatario: {{ mensaje.destinatario|default:"-" }} |
+        Fecha envío: {{ mensaje.fecha_envio|date:"d/m/Y H:i" }}
+      </small>
+
+
+    </li>
+  {% endfor %}
+</ul>
+
   {% else %}
     <div class="alert alert-info text-center">
       No hay mensajes registrados para este pedido.

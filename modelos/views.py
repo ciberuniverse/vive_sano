@@ -3,6 +3,7 @@ from django.forms.models import model_to_dict
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib import messages
+from .validator import validar_caracteres
 from django.utils import timezone
 from django.db import transaction
 from .forms import PrepararPedidoForm, NotificacionForm, FiltrarPedidosForm, NotificacionForm_Cliente, ESTADO_CHOICES
@@ -14,6 +15,12 @@ from .forms import CustomUserCreationForm
 import json
 
 # Create your views here.
+
+chars_allowed = {
+    "alph": "qwertyuiopasdfghjklñzxcvbnm",
+    "numb": "1234567890",
+    "spec": "_.@,"
+}
 
 def json_mensaje_retorno(codigo: int, mensaje: str) -> dict:
 
@@ -33,7 +40,6 @@ def is_logistica(user):
 def is_atencion(user):
     return user.groups.filter(name='AtencionCliente').exists() or user.is_staff
 
-
 def inicio(request):
     
     if request.method == "GET":
@@ -45,7 +51,7 @@ def inicio(request):
         except Exception as err:
 
             error_mensaje = json_mensaje_retorno(500, err)
-            return render(request, "error.html", error_mensaje)
+            return render(request, "inicio.html", error_mensaje)
         
     if request.method == "POST":
         
@@ -55,21 +61,21 @@ def inicio(request):
             if "accion" not in formulario_:
 
                 error_mensaje = json_mensaje_retorno(400, "Estas enviando un formulario sin todos los datos necesarios para enviar.")
-                return render(request, "error.html", error_mensaje)
+                return render(request, "inicio.html", error_mensaje)
 
             if formulario_["accion"] == "ver_carrito":
                 
                 if "carrito" not in formulario_:
 
                     error_mensaje = json_mensaje_retorno(400, "Estas enviando un formulario incompleto.")
-                    return render(request, "error.html", error_mensaje)
+                    return render(request, "inicio.html", error_mensaje)
                 
                 try:
                     # Se obtiene unicamente el carrito del formulario
                     carrito_get = json.loads(formulario_["carrito"])
                 except:
                     error_mensaje = json_mensaje_retorno(500, "El formato del json enviado no es valido.")
-                    return render(request, "error.html", error_mensaje)                     
+                    return render(request, "inicio.html", error_mensaje)                     
 
                 carrito = []
                 total_productos = 0
@@ -80,7 +86,7 @@ def inicio(request):
                     # Se obtiene la informacion del modelo por id
                     resultado = get_object_or_404(Producto, pk=producto_["id"])
                     resultado_dict = model_to_dict(resultado)
-
+                    print(producto_)
                     # Se le agrega la cantidad enviada desde el formulario de inicio
                     resultado_dict["cantidad"] = producto_["cantidad"]
 
@@ -102,23 +108,43 @@ def inicio(request):
             if formulario_["accion"] == "enviar_pedido":
 
                 if not request.user.is_authenticated:
-                    return render(request, "error.html", json_mensaje_retorno(401, "Debes iniciar sesión para enviar un pedido."))
+                    return render(request, "inicio.html", json_mensaje_retorno(401, "Debes iniciar sesión para enviar un pedido."))
 
                 if "carrito" not in formulario_:
-                    return render(request, "error.html", json_mensaje_retorno(400, "No enviaste el carrito mi chico."))
+                    return render(request, "inicio.html", json_mensaje_retorno(400, "No enviaste el carrito mi chico."))
 
                 try:
                     carrito_get = json.loads(formulario_["carrito"])
                 except:
-                    return render(request, "error.html", json_mensaje_retorno(500, "El carrito enviado no es JSON válido."))
+                    return render(request, "inicio.html", json_mensaje_retorno(500, "El carrito enviado no es JSON válido."))
 
                 if len(carrito_get) == 0:
-                    return render(request, "error.html", json_mensaje_retorno(400, "No puedes enviar un pedido vacío."))
+                    return render(request, "inicio.html", json_mensaje_retorno(400, "No puedes enviar un pedido vacío."))
 
                 # Buscar cliente
                 cliente = getattr(request.user, "cliente", None)
                 if cliente is None:
-                    return render(request, "error.html", json_mensaje_retorno(400, "Tu usuario no tiene un cliente asociado."))
+                    return render(request, "inicio.html", json_mensaje_retorno(400, "Tu usuario no tiene un cliente asociado."))
+                
+                sobrepasado_ = []
+                productos_inv = Producto.objects.all()
+
+                for producto in carrito_get:
+                    
+                    producto_bdd = productos_inv.get(id=producto['id'])
+                    cantidad = producto_bdd.stock
+
+                    if cantidad < producto['cantidad']:
+
+                        sobre_ = int(producto['cantidad']) - int(cantidad) 
+                        sobrepasado_.append(f"El stock de {producto_bdd.nombre} tiene {cantidad} y te pasas: {sobre_}.")
+
+                if sobrepasado_:
+                    sobrepasado_ = "\n".join(sobrepasado_)
+                    return render(request, "inicio.html", json_mensaje_retorno(400, f"Estas llevando sobre el stock. {sobrepasado_}"))
+
+
+
 
                 with transaction.atomic():
 
@@ -161,8 +187,12 @@ def inicio(request):
         except Exception as err:
             
             json_error = json_mensaje_retorno(500, err)
-            return render(request, "error.html", json_error)
-
+            return render(
+                request,
+                "logistica/pedidos_logistica.html",
+                json_mensaje_retorno(500, f"ERROR: {err}")
+            )
+    
     return render(request, "inicio.html", productos)
 
 @login_required
@@ -188,15 +218,16 @@ def ver_pedidos_cliente(request):
         "pedidos": pedidos_con_detalles
     })
 
-@login_required
-def obtener_notificaciones(request):
-    
-    pass
-
 
 @login_required
 @user_passes_test(is_logistica)
 def preparar_pedido(request, pedido_id):
+
+    pedido_str_id = str(pedido_id)
+    if not pedido_str_id.isnumeric() or len(pedido_str_id) > 5:
+        return render(request, "logistica/preparar_pedido.html", json_mensaje_retorno(402, "Estas inyectando parametros por el id."))
+    
+
     pedido = get_object_or_404(Pedido, pk=pedido_id)
     if request.method == 'POST':
         form = PrepararPedidoForm(request.POST)
@@ -266,6 +297,12 @@ def preparar_pedido(request, pedido_id):
 @login_required
 @user_passes_test(is_logistica)
 def detalle_pedido_logistica(request, pedido_id):
+
+    pedido_str_id = str(pedido_id)
+    if not pedido_str_id.isnumeric() or len(pedido_str_id) > 5:
+        return render(request, "logistica/detalle_pedido_logistica.html", json_mensaje_retorno(402, "Estas inyectando parametros por el id."))
+    
+
     pedido = get_object_or_404(Pedido, pk=pedido_id)
     detalles = pedido.detallepedido_set.select_related('producto').all()
     return render(request, 'logistica/detalle_pedido_logistica.html', {'pedido': pedido, 'detalles': detalles})
@@ -274,6 +311,10 @@ def detalle_pedido_logistica(request, pedido_id):
 @user_passes_test(is_logistica)
 def enviar_notificacion(request, pedido_id):
 
+    pedido_str_id = str(pedido_id)
+    if not pedido_str_id.isnumeric() or len(pedido_str_id) > 5:
+        return render(request, "logistica/enviar_notificacion.html", json_mensaje_retorno(402, "Estas inyectando parametros por el id."))
+    
     notis = list(Notificacion.objects.filter(pedido_id=pedido_id).order_by('-fecha_envio'))
 
     pedido = get_object_or_404(Pedido, pk=pedido_id)
@@ -339,6 +380,11 @@ def lista_notificaciones(request):
 @login_required
 @user_passes_test(is_atencion)
 def responder_notificacion(request, notificacion_id):
+
+    pedido_str_id = str(notificacion_id)
+    if not pedido_str_id.isnumeric() or len(pedido_str_id) > 5:
+        return render(request, "servicio_cliente/responder_notificacion.html", json_mensaje_retorno(402, "Estas inyectando parametros por el id."))
+    
     noti = get_object_or_404(Notificacion, pk=notificacion_id)
     if request.method == 'POST':
         respuesta = request.POST.get('respuesta')
@@ -366,6 +412,13 @@ def responder_notificacion(request, notificacion_id):
 @login_required
 @user_passes_test(is_atencion)
 def enviar_notificacion_cliente(request, pedido_id):
+
+
+
+    pedido_str_id = str(pedido_id)
+    if not pedido_str_id.isnumeric() or len(pedido_str_id) > 5:
+        return render(request, "servicio_cliente/enviar_notificacion_cliente.html", json_mensaje_retorno(402, "Estas inyectando parametros por el id."))
+    
 
     pedido = get_object_or_404(Pedido, pk=pedido_id)
 
@@ -476,6 +529,19 @@ def registro(request):
             if not formulario.is_valid():
                 return render(request, "registro.html", json_mensaje_retorno(402, "Estas enviando un formulario corrupto o incompleto."))
 
+            validar_formulario = {
+                "first_name": [100, chars_allowed["alph"]],
+                "last_name": [100, chars_allowed["alph"]],
+                "rut": [12, chars_allowed["alph"] + "-k"],
+                "email": [60, chars_allowed["alph"] + chars_allowed["numb"] + "@."],
+                "telefono": [15, chars_allowed["numb"] + "+"],
+                "direccion": [255, chars_allowed["alph"] + chars_allowed["numb"] + ",."],
+            }
+
+            resultado_valid = validar_caracteres(formulario, validar_formulario)
+            if resultado_valid["codigo"] != 200:
+                return render(request, "registro.html", json_mensaje_retorno(402, "Estas enviando un formulario corrupto o incompleto."))
+
             # Se guarda la cuenta en la base de datos
             usuario_creado = formulario.save()
 
@@ -485,12 +551,12 @@ def registro(request):
             # Evitar duplicado por si existiera
             if not hasattr(usuario_creado, "cliente"):
                 Cliente.objects.create(
-                    user=usuario_creado,
-                    nombre=formulario.cleaned_data["first_name"],
-                    apellido=formulario.cleaned_data["last_name"],
-                    email=formulario.cleaned_data["email"],
-                    telefono=formulario.cleaned_data.get("telefono", ""),
-                    direccion=formulario.cleaned_data.get("direccion", "")
+                    user = usuario_creado,
+                    nombre = formulario.cleaned_data["first_name"],
+                    apellido = formulario.cleaned_data["last_name"],
+                    email = formulario.cleaned_data["email"],
+                    telefono = formulario.cleaned_data.get("telefono", ""),
+                    direccion = formulario.cleaned_data.get("direccion", "")
                 )
 
 
@@ -503,6 +569,7 @@ def registro(request):
             if all(x not in formulario_enviado for x in ["usuario", "contrasena"]):    
                 error_mensaje = json_mensaje_retorno(402, "Estas enviando un formulario corrupto o incompleto.")
                 return render(request, "error.html", error_mensaje)
+
 
             usuario = formulario_enviado["usuario"]
             contrasena = formulario_enviado["contrasena"]
@@ -523,3 +590,10 @@ def registro(request):
 def cerrar_sesion(request):
     logout(request)
     return redirect("iniciar_sesion")
+
+
+def error_404_view(request, exception):
+    return redirect('inicio')
+
+def error_500_view(request):
+    return redirect("inicio")

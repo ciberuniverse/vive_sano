@@ -27,10 +27,8 @@ STATIC_URL = 'static/'
 SECRET_KEY = 'django-insecure-rumu(o4hthra!m6djgrx*bhs-o+_#hcj(=^!2x+11l#d387_g7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+DEBUG = False
+ALLOWED_HOSTS = ['*']  # o tu dominio
 
 # Application definition
 
@@ -121,7 +119,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

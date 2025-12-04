@@ -10,12 +10,11 @@
     <!-- <a class="text-decoration-none text-muted" href="#">Ver todo</a> -->
   </div>
 
-  {% for producto in productos %}
-  <div class="row g-3 mb-3">
-    <div class="col-6 col-md-4 col-lg-3">
+  <div class="row g-3">
+    {% for producto in productos %}
+    <div class="col-12 col-sm-6 col-md-4"> <!-- 3 columnas en md -->
       <div class="card card-product h-100">
-        <img src="{{ producto.imagen.url }}" class="product-img" style="image-rendering: auto;"
-          alt="Imagen de {{ producto.nombre }}">
+        <img src="{{ producto.imagen.url }}" class="product-img" alt="Imagen de {{ producto.nombre }}">
         <div class="p-3 d-flex flex-column">
           <div class="mb-2">
             <div class="d-flex justify-content-between align-items-start">
@@ -27,15 +26,25 @@
             <p class="text-muted small mb-1 description-truncate">
               {{ producto.descripcion }}
             </p>
-
-
           </div>
 
           <div class="mt-auto d-flex justify-content-between align-items-center">
-            <small class="text-muted">{{ producto.categoria }}</small>
+            <div>
+              <small class="text-muted">{{ producto.categoria }}</small><br>
+              <span class="badge bg-secondary">Stock: {{ producto.stock }}</span>
+            </div>
+
+            {% if producto.stock > 1 %} 
+
             <a class="btn btn-sm btn-outline-success"
-              onclick='agregar_al_carrito({ "id": {{ producto.id }}, "nombre": "{{ producto.nombre|escapejs }}", "precio": {{ producto.precio }} })'><span
-                class="material-symbols-outlined">add_shopping_cart</span></a>
+              onclick='agregar_al_carrito({ "id": {{ producto.id }}, "nombre": "{{ producto.nombre|escapejs }}", "precio": {{ producto.precio }} })' >
+              <span class="material-symbols-outlined">add_shopping_cart</span>
+            </a>
+            {% else %}
+            <a class="btn btn-sm btn-outline-danger" >
+              <span class="material-symbols-outlined">add_shopping_cart</span>
+            </a>
+            {% endif %}
           </div>
 
           <!-- Collapse con la descripción completa -->
@@ -47,9 +56,10 @@
         </div>
       </div>
     </div>
+    {% endfor %}
   </div>
+</div>
 
-  {% endfor %}
 
   <!-- Floating cart: fuera del loop -->
   <form id="formCarrito" method="post">
@@ -70,6 +80,7 @@
     let CARRITO = []
     let SUMA = 0
 
+    
     function detectar_carrito() {
       try {
         const raw = localStorage.getItem("carrito")

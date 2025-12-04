@@ -15,8 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
+from django.views.static import serve
 from django.conf.urls.static import static
+from django.conf.urls import handler500, handler404
 
 from modelos import views as modelos_vw
 from django.conf import settings
@@ -38,5 +40,8 @@ urlpatterns = [
 
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+re_media = r'^%s(?P<path>.*)$' % settings.MEDIA_URL.lstrip('/')
+urlpatterns += [re_path(re_media, serve, {'document_root': settings.MEDIA_ROOT})]
+
+handler500 = modelos_vw.error_500_view
+handler404 = modelos_vw.error_404_view

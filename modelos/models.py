@@ -5,8 +5,6 @@ from django.core.validators import MinValueValidator
 
 # Create your models here.
 
-
-
 class Producto(models.Model):
 
     id = models.BigAutoField(primary_key=True)
@@ -43,7 +41,6 @@ class Producto(models.Model):
     def __str__(self):
         return self.nombre
 
-
 class Pedido(models.Model):
     ESTADO_CHOICES = [
         ('PENDIENTE', 'Pendiente'),
@@ -53,19 +50,40 @@ class Pedido(models.Model):
         ('CANCELADO', 'Cancelado'),
     ]
 
-    id = models.BigAutoField(primary_key=True)
-    cliente = models.ForeignKey('Cliente', on_delete=models.SET_NULL, null=True, blank=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    estado = models.CharField(max_length=30, choices=ESTADO_CHOICES, default='PENDIENTE')
-    tiempo_despacho = models.DateTimeField(null=True, blank=True, help_text="Fecha/hora programada de despacho")
-    almacenamiento_especial = models.BooleanField(default=False)
-    observaciones = models.TextField(blank=True, null=True)
+    id = models.BigAutoField(
+        primary_key = True
+    )
+    cliente = models.ForeignKey(
+        'Cliente',
+        on_delete = models.SET_NULL,
+        null = True,
+        blank = True
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add = True
+    )
+    estado = models.CharField(
+        max_length = 30,
+        choices = ESTADO_CHOICES,
+        default = 'PENDIENTE'
+    )
+    tiempo_despacho = models.DateTimeField(
+        null = True,
+        blank = True,
+        help_text = "Fecha/hora programada de despacho"
+    )
+    almacenamiento_especial = models.BooleanField(
+        default = False
+    )
+    observaciones = models.TextField(
+        blank = True,
+        null = True
+    )
     # si ya tenías detalles de pedido con FK a Pedido, mantenlos
     # Relation to notifications (reverse relation provided by Notificacion.pedido)
 
     def __str__(self):
         return f"Pedido #{self.id} - {self.cliente or 'Cliente desconocido'} - {self.estado}"
-
 
 class DetallePedido(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -135,7 +153,6 @@ class DetallePedido(models.Model):
             "creado": self.creado,
         }
 
-
 class Notificacion(models.Model):
 
     TIPO_CHOICES = [
@@ -166,40 +183,39 @@ class Notificacion(models.Model):
     destinatario = models.ForeignKey(
         User,
         on_delete = models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='notificaciones_recibidas'
+        null = True,
+        blank = True,
+        related_name = 'notificaciones_recibidas'
     )
     tipo = models.CharField(
-        max_length=30,
-        choices=TIPO_CHOICES,
-        default='INFO_GENERAL'
+        max_length = 30,
+        choices = TIPO_CHOICES,
+        default = 'INFO_GENERAL'
     )
     mensaje = models.TextField(
-        max_length=1000
+        max_length = 1000
     )
     fecha_envio = models.DateTimeField(
         auto_now_add = True
     )
     leida = models.BooleanField(
-        default=False
+        default = False
     )
     estado_respuesta = models.CharField(
-        max_length=20,
-        choices=RESPUESTA_CHOICES,
-        default='PENDIENTE'
+        max_length = 20,
+        choices = RESPUESTA_CHOICES,
+        default = 'PENDIENTE'
     )
     respuesta_texto = models.TextField(
-        blank=True, null=True
+        blank = True, null = True
     )
     fecha_respuesta = models.DateTimeField(
-        null=True,
-        blank=True
+        null = True,
+        blank = True
     )
 
     def __str__(self):
         return f"Notificación #{self.id} ({self.tipo}) -> Pedido {self.pedido_id}"
-
 
 class Cliente(models.Model):
     
@@ -221,6 +237,14 @@ class Cliente(models.Model):
     email = models.EmailField(
         unique = True
     )
+
+    rut = models.CharField(
+        max_length=12,
+        null=False,
+        blank=False,
+        unique=True
+    )
+
 
     telefono = models.CharField(
         max_length = 15,

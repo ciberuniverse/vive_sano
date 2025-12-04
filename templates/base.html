@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 
@@ -146,22 +147,22 @@
 </head>
 
 <body>
-<!-- Navbar dinámica -->
-<nav class="navbar navbar-expand-lg fixed-top bg-white border-bottom">
-  <div class="container">
-    <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-      <span class="material-symbols-outlined nav-icon">local_florist</span>
-      Vive Sano
-    </a>
+  <!-- Navbar dinámica -->
+  <nav class="navbar navbar-expand-lg fixed-top bg-white border-bottom">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+        <span class="material-symbols-outlined nav-icon">local_florist</span>
+        Vive Sano
+      </a>
 
-    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
-      <span class="material-symbols-outlined">menu</span>
-    </button>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
 
-    <div class="collapse navbar-collapse" id="navMain">
-      <ul class="navbar-nav ms-auto align-items-center">
+      <div class="collapse navbar-collapse" id="navMain">
+        <ul class="navbar-nav ms-auto align-items-center">
 
-        {% if not user.is_authenticated %}
+          {% if not user.is_authenticated %}
           <!-- 🌱 Usuario Público -->
           <li class="nav-item">
             <a class="nav-link" href="/">
@@ -171,17 +172,11 @@
 
           <li class="nav-item">
             <a class="nav-link" href="/iniciar_sesion/">
-              <span class="material-symbols-outlined">person_add</span> Registrarse
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link" href="/iniciar_sesion/">
               <span class="material-symbols-outlined">login</span> Ingresar
             </a>
           </li>
 
-        {% else %}
+          {% else %}
 
           <li class="nav-item">
             <a class="nav-link" href="/">
@@ -249,43 +244,19 @@
           </li>
           {% endif %}
 
-        {% endif %}
-      </ul>
-    </div>
+          {% endif %}
+        </ul>
+      </div>
 
-  </div>
-</nav>
+    </div>
+  </nav>
 
 
 
   <!-- Main -->
   <main class="container">
     <div class="layout my-4">
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        ESTO ESTA EN BASE.HTML AGREGAR RELLENO PORFI UWU
-
-
-
-        Usuario logistica: usuario_logistica
-                contraseña: paralelipipedo123
-        <br>
-        <br>
-          
-        Usuario servicio: usuario_servicio
-                contraseña: paralelipipedo123
-        <br>
-        <br>
-        
-        cliente: Puedes crear una cuenta para probar o usar:
-                cliente
-                contraseña: paralelipipedo123
-        <br>
-        <br>
-
-        superusuario: root
-                contraseña: root123
-      </aside>
+      <aside class="sidebar" style="opacity: 0;"></aside>
 
       <!-- Content area -->
       <section>
@@ -296,10 +267,6 @@
             <p>Productos naturales y opciones saludables seleccionadas con criterio.</p>
           </div>
           <div class="text-end">
-            <a class="btn btn-outline-success btn-sm me-2" href="#"><span
-                class="material-symbols-outlined">local_shipping</span> Envíos</a>
-            <a class="btn btn-success btn-sm" href="#"><span class="material-symbols-outlined">local_offer</span>
-              Promociones</a>
           </div>
         </div>
 
@@ -308,7 +275,7 @@
         {% if codigo and mensaje %}
         <div class="container mt-4">
           <div class="row justify-content-center">
-            <div class="col-md-6"> {# ancho fijo, centrado #}
+            <div class="col-md-6"> <!-- ancho fijo, centrado -->
               <div class="alert alert-{% if codigo == 200 %}success{% else %}danger{% endif %} d-flex align-items-start"
                 role="alert">
                 <i
@@ -316,23 +283,27 @@
                 <div>
                   <p class="mb-1"><strong>Código:</strong> {{ codigo }}</p>
                   <p class="mb-0"><strong>Mensaje:</strong> {{ mensaje }}</p>
+                  <a href="/" class="btn btn-link p-0 mt-2">Volver</a>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
         {% endif %}
 
 
+        {% if not codigo or codigo == 200 %}
 
-        {% block contenido %}
-        <div class="py-5 text-center">
-          <h4 class="text-muted">Espacio dinámico</h4>
-          <p class="text-muted">Usa este bloque para inyectar listas, productos o componentes del proyecto.</p>
-          <span class="material-symbols-outlined" style="font-size:48px;color:var(--brand)">eco</span>
-        </div>
-        {% endblock %}
 
+          {% block contenido %}
+          <div class="py-5 text-center">
+            <h4 class="text-muted">Espacio dinámico</h4>
+            <p class="text-muted">Usa este bloque para inyectar listas, productos o componentes del proyecto.</p>
+            <span class="material-symbols-outlined" style="font-size:48px;color:var(--brand)">eco</span>
+          </div>
+          {% endblock %}
+        {% endif %}
 
       </section>
     </div>

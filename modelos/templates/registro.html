@@ -68,17 +68,17 @@
 
 <script>
   let ui_login = 1;
-  document.getElementById("crear_cuenta_div").style.display = "none";
+  document.getElementById("crear_cuenta_div").hidden = true
 
   function mostrar_ocultar() {
     if (ui_login === 1) {
       ui_login = 0;
-      document.getElementById("iniciar_sesion_div").style.display = "none";
-      document.getElementById("crear_cuenta_div").style.display = "block";
+      document.getElementById("iniciar_sesion_div").hidden = true;
+      document.getElementById("crear_cuenta_div").hidden = false;
     } else {
       ui_login = 1;
-      document.getElementById("iniciar_sesion_div").style.display = "block";
-      document.getElementById("crear_cuenta_div").style.display = "none";
+      document.getElementById("iniciar_sesion_div").hidden = false;
+      document.getElementById("crear_cuenta_div").hidden = true;
     }
   }
 </script>
