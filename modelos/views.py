@@ -532,7 +532,7 @@ def registro(request):
             validar_formulario = {
                 "first_name": [100, chars_allowed["alph"]],
                 "last_name": [100, chars_allowed["alph"]],
-                "rut": [12, chars_allowed["alph"] + "-k"],
+                "rut": [12, chars_allowed["numb"] + "-k"],
                 "email": [60, chars_allowed["alph"] + chars_allowed["numb"] + "@."],
                 "telefono": [15, chars_allowed["numb"] + "+"],
                 "direccion": [255, chars_allowed["alph"] + chars_allowed["numb"] + ",."],
