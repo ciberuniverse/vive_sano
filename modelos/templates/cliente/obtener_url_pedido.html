@@ -1,0 +1,27 @@
+<script>
+    const params = new URLSearchParams(window.location.search)
+    try {
+        token_ = params.get("TBK_TOKEN")
+        token_pay = params.get("token_ws")
+        console.log(params.keys())
+
+        for (x of params.keys()) {
+
+            if (x.toLowerCase().includes("token")) {
+
+                redirect_ = params.get(x)
+                window.location.href = `/webpay/retorno/${redirect_}/`
+                break
+            }
+
+        }
+
+        console.log(token_, params)
+
+    } catch {
+        //window.location.href = "/inicio"
+    }
+</script>
+
+
+<!-- NO SE ESTA OCUPANDOOOOOOOOOOOOOOOOOOO -->

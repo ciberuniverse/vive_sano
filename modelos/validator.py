@@ -11,8 +11,14 @@ def validar_caracteres(formulario_a_validar: dict, name_len_chars: dict) -> dict
     }
     """
 
-    for key, value in formulario_a_validar:
+    for key in formulario_a_validar:
+
+        value = formulario_a_validar[key]
+        if key in ["accion", "csrfmiddlewaretoken"]:
+            continue
         
+        print(key, value)
+
         if key not in name_len_chars:
             return json_retorno(402, "Estas enviando un formulario incompleto o corrupto.")
         

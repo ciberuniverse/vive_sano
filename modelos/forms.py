@@ -70,6 +70,7 @@ def validar_rut(value):
 
 ESTADO_CHOICES = [
     ('PENDIENTE', 'Pendiente'),
+    ('PAGADO', "Pagado"),
     ('EN_PREPARACION', 'En preparación'),
     ('LISTO', 'Listo para despacho'),
     ('ENVIADO', 'Enviado'),
@@ -106,8 +107,10 @@ class CustomUserCreationForm(UserCreationForm):
     )
 
     telefono = forms.CharField(
-        max_length=15,
+        max_length=12,
         required=True,
+        error_messages={'invalid': 'Ingrese solo dígitos (7-15).'},
+        widget=forms.TextInput(attrs={"type": "tel"}),
         label="Teléfono",
         validators=[phone_validator]
     )
@@ -132,6 +135,11 @@ class CustomUserCreationForm(UserCreationForm):
             "direccion",
         )
 
+class FiltrarPedidosForm(forms.Form):
+    
+    estado = forms.ChoiceField(
+        choices = Pedido.ESTADO_CHOICES
+    )
 
 class PrepararPedidoForm(forms.Form):
     

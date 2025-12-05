@@ -38,6 +38,10 @@ urlpatterns = [
     path('atencion/notificacion/<int:notificacion_id>/responder/', modelos_vw.responder_notificacion, name='responder_notificacion'),
     path("mis-pedidos/", modelos_vw.ver_pedidos_cliente, name="mis_pedidos"),
 
+    # webpay xd
+    path("redirect/webpay", modelos_vw.webpay_redirect, name="webpay_redirect"),
+    path("webpay/retorno", modelos_vw.webpay, name="webpay_pago")
+
 ]
 
 re_media = r'^%s(?P<path>.*)$' % settings.MEDIA_URL.lstrip('/')

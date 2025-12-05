@@ -3,30 +3,45 @@
 <div class="container mt-4">
   <h2 class="mb-3">Mis pedidos</h2>
 
-  {% if pedidos %}
-    {% for item in pedidos %}
-      <div class="card mb-4 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Pedido #{{ item.pedido.id }}</h5>
-          <p class="text-muted">Fecha: {{ item.pedido.fecha_creacion|date:"d/m/Y H:i" }}</p>
-          <p><strong>Estado:</strong> {{ item.pedido.estado }}</p>
+<div class="container my-4">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="post" class="row g-3">
+        {% csrf_token %}
 
-          <h6>Detalles:</h6>
-          <ul class="list-group">
-            {% for d in item.detalles %}
-              <li class="list-group-item d-flex justify-content-between">
-                <span>{{ d.producto.nombre }} (x{{ d.cantidad }})</span>
-                <span>${{ d.precio_unitario }}</span>
-              </li>
-            {% endfor %}
-          </ul>
+        {{ form.as_p }}
+
+        <div class="col-12 text-end">
+          <button type="submit" class="btn btn-primary">Filtrar</button>
         </div>
-      </div>
-      <a href="{% url 'responder_mensaje_cliente' item.pedido.id %}">Ver Notificaciones</a>
+      </form>
+    </div>
+  </div>
+  <hr>
+  {% if pedidos %}
+  {% for item in pedidos %}
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title">Pedido #{{ item.pedido.id }}</h5>
+      <p class="text-muted">Fecha: {{ item.pedido.fecha_creacion|date:"d/m/Y H:i" }}</p>
+      <p><strong>Estado:</strong> {{ item.pedido.estado }}</p>
 
-    {% endfor %}
+      <h6>Detalles:</h6>
+      <ul class="list-group">
+        {% for d in item.detalles %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ d.producto.nombre }} (x{{ d.cantidad }})</span>
+          <span>${{ d.precio_unitario }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <a href="{% url 'responder_mensaje_cliente' item.pedido.id %}">Ver Notificaciones</a>
+
+  {% endfor %}
   {% else %}
-    <p class="text-muted">No tienes pedidos aún.</p>
+  <p class="text-muted">No tienes pedidos aún.</p>
   {% endif %}
 </div>
 {% endblock %}

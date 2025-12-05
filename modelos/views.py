@@ -6,13 +6,18 @@ from django.contrib import messages
 from .validator import validar_caracteres
 from django.utils import timezone
 from django.db import transaction
-from .forms import PrepararPedidoForm, NotificacionForm, FiltrarPedidosForm, NotificacionForm_Cliente, ESTADO_CHOICES
+from .forms import PrepararPedidoForm, NotificacionForm, FiltrarPedidosForm, NotificacionForm_Cliente, ESTADO_CHOICES,  CustomUserCreationForm, FiltrarPedidosForm
 from django.db.models import Q
 
+# Trans bank
+from transbank.webpay.webpay_plus.transaction import Transaction
+from transbank.common.options import WebpayOptions
+from transbank.common.integration_commerce_codes import IntegrationCommerceCodes
+from transbank.common.integration_api_keys import IntegrationApiKeys
+from transbank.common.integration_type import IntegrationType
 
-from .models import Producto, Pedido, DetallePedido, Notificacion
-from .forms import CustomUserCreationForm
-import json
+from .models import Producto, Pedido, DetallePedido, Notificacion, Cliente
+import json, time
 
 # Create your views here.
 
@@ -115,6 +120,7 @@ def inicio(request):
 
                 try:
                     carrito_get = json.loads(formulario_["carrito"])
+                    print(carrito_get)
                 except:
                     return render(request, "inicio.html", json_mensaje_retorno(500, "El carrito enviado no es JSON válido."))
 
@@ -125,7 +131,8 @@ def inicio(request):
                 cliente = getattr(request.user, "cliente", None)
                 if cliente is None:
                     return render(request, "inicio.html", json_mensaje_retorno(400, "Tu usuario no tiene un cliente asociado."))
-                
+
+
                 sobrepasado_ = []
                 productos_inv = Producto.objects.all()
 
@@ -143,15 +150,12 @@ def inicio(request):
                     sobrepasado_ = "\n".join(sobrepasado_)
                     return render(request, "inicio.html", json_mensaje_retorno(400, f"Estas llevando sobre el stock. {sobrepasado_}"))
 
-
-
-
                 with transaction.atomic():
 
                     # Crear el pedido correctamente
                     pedido = Pedido.objects.create(
-                        cliente=cliente,          # ✔ Tu modelo usa cliente, no usuario
-                        estado="PENDIENTE"        # ✔ coincide con tu modelo
+                        cliente=cliente,
+                        estado="PENDIENTE"       
                         # fecha_creacion se llena sola
                     )
 
@@ -174,23 +178,41 @@ def inicio(request):
                             precio_unitario=producto.precio
                         )
 
-                    # (Opcional) Si tu modelo tiene total, puedes añadirlo aquí
                     # pedido.total = total
                     # pedido.save()
+                
+                # Se obtiene el id del cliente
+                session_id_token = request.session.get("_auth_user_id")
+                # Se crea el tipo de transaccion
+                tx = Transaction(WebpayOptions(
+                    IntegrationCommerceCodes.WEBPAY_PLUS, 
+                    IntegrationApiKeys.WEBPAY, 
+                    IntegrationType.TEST
+                ))
 
-                return render(request, "pedido_creado.html", {
-                    "pedido": pedido,
-                    "total": total,
-                })
+                # Se le asigna un identificador que el pedido tendra siempre dentro de webpay tanto para la session como para la orden
+                buy_order = f"P-{pedido.id}-{session_id_token}-{int(time.time())}"
+                session_id = f"S-{session_id_token}-{int(time.time())}"
+
+                # La cantidad, url, y respuesta de la creacion de la orden.
+                amount = int(total)
+                return_url = request.build_absolute_uri('/webpay/retorno') 
+                response = tx.create(buy_order, session_id, amount, return_url)
+
+
+                print(response['url'] + '?token_ws=' + response['token'])
+                return redirect(response['url'] + '?token_ws=' + response['token'])
+                # Se redirige a la vista de comprobacion de pago en donde se procesara.
+                return redirect("webpay_pago", response_token = response['token'])
 
 
         except Exception as err:
             
-            json_error = json_mensaje_retorno(500, err)
+            json_error = json_mensaje_retorno(500, f"ERROR: Ocurrio un problema al procesar tu pedido: {err}")
             return render(
                 request,
                 "logistica/pedidos_logistica.html",
-                json_mensaje_retorno(500, f"ERROR: {err}")
+                json_error
             )
     
     return render(request, "inicio.html", productos)
@@ -202,22 +224,45 @@ def ver_pedidos_cliente(request):
     if cliente is None:
         return render(request, "inicio.html", json_mensaje_retorno(400, "Tu usuario no tiene un cliente asociado."))
 
-    # Obtener pedidos del cliente (ordenados del más reciente al más antiguo)
-    pedidos = Pedido.objects.filter(cliente=cliente).order_by("-fecha_creacion")
+    # Instanciar el formulario (POST o vacío)
+    if request.method == "POST":
+        form = FiltrarPedidosForm(request.POST)
+    else:
+        form = FiltrarPedidosForm()
 
-    # Preparar la estructura para mostrar cada pedido con sus detalles
+    # Base queryset: solo pedidos del cliente, ordenados por fecha
+    queryset = Pedido.objects.filter(cliente=cliente).order_by("-fecha_creacion")
+
+    # Si es POST y el formulario es válido, aplicar filtros
+    if request.method == "POST" and form.is_valid():
+        filtros = form.cleaned_data
+        estado = filtros.get("estado")
+        fecha_desde = filtros.get("fecha_desde")
+
+        if estado:
+            queryset = queryset.filter(estado=estado)
+        if fecha_desde:
+            queryset = queryset.filter(fecha__gte=fecha_desde)
+    elif request.method == "POST" and not form.is_valid():
+        # Formulario inválido: no mostrar pedidos (comportamiento original)
+        queryset = Pedido.objects.none()
+
+    # Traer detalles y producto relacionados para evitar N+1
+    queryset = queryset.prefetch_related("detallepedido_set__producto")
+
+    # Preparar la estructura pedidos_con_detalles
     pedidos_con_detalles = []
-    for p in pedidos:
-        detalles = p.detallepedido_set.select_related("producto").all()
+    for p in queryset:
+        detalles = p.detallepedido_set.all()  # ya prefetched
         pedidos_con_detalles.append({
             "pedido": p,
             "detalles": detalles
         })
 
     return render(request, "mis_pedidos.html", {
+        "form": form,
         "pedidos": pedidos_con_detalles
     })
-
 
 @login_required
 @user_passes_test(is_logistica)
@@ -459,6 +504,96 @@ def enviar_notificacion_cliente(request, pedido_id):
     })
 
 @login_required
+def webpay_redirect(request):
+    return render(request, "cliente/obtener_url_pedido.html")
+
+@login_required
+def webpay(request):
+
+    response_token = request.GET.get('token_ws') or request.POST.get('token_ws') or request.GET.get("TBK_TOKEN")
+    if not response_token:
+        return redirect('inicio', json_mensaje_retorno(402, "No se logro obtener ningun parametro de token."))
+
+    # Estructura de respuesta por defecto
+    retorno_mensaje = json_mensaje_retorno(500, "Ocurrió un error al procesar el pago.")
+
+    ##### Se intenta obtener el TBK_token si existe se obtiene tambien el TBK_ORDEN_COMPRA
+    if request.GET.get("TBK_TOKEN"):
+
+        buy_order = str(request.GET.get('TBK_ORDEN_COMPRA'))
+        pedido_id = buy_order.split('-')[1]
+
+        if pedido_id:
+            Pedido.objects.filter(id=pedido_id).delete()
+
+        retorno_mensaje = json_mensaje_retorno(500, "Se anulo la compra del pedido.")
+        return render(request, "inicio.html", retorno_mensaje)
+
+    else: 
+        pedido = None
+        pedido_id = None
+
+    try:
+        # 1) Instanciar cliente Webpay
+        tx = Transaction(WebpayOptions(
+            IntegrationCommerceCodes.WEBPAY_PLUS,
+            IntegrationApiKeys.WEBPAY,
+            IntegrationType.TEST,
+        ))
+
+        # 2) Confirmar transacción con token
+        response = tx.commit(response_token)
+
+        # Validaciones básicas del response
+        if not response or "buy_order" not in response:
+            return render(request, "inicio.html", json_mensaje_retorno(400, "Respuesta inválida de Webpay (sin buy_order)."))
+
+        buy_order = str(response['buy_order'])
+        pedido_id = buy_order.split('-')[1]
+
+        parts = buy_order.split("-")
+        if len(parts) < 2 or not parts[1].isdigit():
+            return render(request, "inicio.html", json_mensaje_retorno(400, "buy_order con formato inválido."))
+
+        pedido_id = int(pedido_id)
+
+        # 3) Obtener el pedido
+        try:
+            pedido = Pedido.objects.get(id=pedido_id)
+        except Pedido.DoesNotExist:
+            return render(request, "inicio.html", json_mensaje_retorno(404, "Pedido no encontrado."))
+
+        # 4) Actualizar estado según response_code
+        response_code = response.get("response_code")
+        with transaction.atomic():
+            if response_code == 0:
+                pedido.estado = "PAGADO"
+                pedido.save(update_fields=["estado"])
+                retorno_mensaje = json_mensaje_retorno(200, "Pedido creado y pagado exitosamente.")
+            else:
+                pedido.estado = "CANCELADO"
+                pedido.save(update_fields=["estado"])
+                retorno_mensaje = json_mensaje_retorno(402, "Pedido rechazado o cancelado por Webpay.")
+
+
+        return render(request, "pedido_creado.html", retorno_mensaje)
+
+    except Exception as err:
+        # Loguear el error con contexto útil
+        print(f"[Webpay commit error] token={response_token} pedido_id={pedido_id} err={err}")
+
+        print(pedido_id)
+        if pedido_id:
+            Pedido.objects.filter(id=pedido_id).delete()
+
+        retorno_mensaje = json_mensaje_retorno(500, "Ocurrió un error al intentar procesar el pago.")
+
+        return render(request, "inicio.html", retorno_mensaje)
+
+    
+    return render(request, "inicio.html", retorno_mensaje)
+
+@login_required
 def responder_mensaje_cliente(request, pedido_id):
 
     # El cliente debe ser dueño del pedido
@@ -527,26 +662,31 @@ def registro(request):
             # Se envia el formulario llenado para verificar si es valido
             formulario = CustomUserCreationForm(formulario_enviado)
             if not formulario.is_valid():
-                return render(request, "registro.html", json_mensaje_retorno(402, "Estas enviando un formulario corrupto o incompleto."))
+                return render(request, "registro.html", json_mensaje_retorno(402, f"Estas enviando un formulario corrupto o incompleto: {formulario.errors.as_text()}"))
 
             validar_formulario = {
-                "first_name": [100, chars_allowed["alph"]],
-                "last_name": [100, chars_allowed["alph"]],
+                "username": [150, chars_allowed["alph"] + chars_allowed["numb"] + "@.+-_"],
+                "password1": [30, chars_allowed["alph"] + chars_allowed["numb"] + "_"],
+                "password2": [30, chars_allowed["alph"] + chars_allowed["numb"] + "_"],
+
+                "first_name": [100, chars_allowed["alph"] + " "],
+                "last_name": [100, chars_allowed["alph"] + " "],
                 "rut": [12, chars_allowed["numb"] + "-k"],
                 "email": [60, chars_allowed["alph"] + chars_allowed["numb"] + "@."],
                 "telefono": [15, chars_allowed["numb"] + "+"],
-                "direccion": [255, chars_allowed["alph"] + chars_allowed["numb"] + ",."],
+                "direccion": [255, chars_allowed["alph"] + chars_allowed["numb"] + ",. "],
             }
+            print("xd")
 
-            resultado_valid = validar_caracteres(formulario, validar_formulario)
+            resultado_valid = validar_caracteres(formulario_enviado, validar_formulario)
             if resultado_valid["codigo"] != 200:
-                return render(request, "registro.html", json_mensaje_retorno(402, "Estas enviando un formulario corrupto o incompleto."))
+                return render(request, "registro.html", resultado_valid)
+
+            if Cliente.objects.filter(rut=formulario_enviado["rut"]).exists():
+                return render(request, "registro.html", json_mensaje_retorno(402, f"Ya existe un usuario con ese RUT."))
 
             # Se guarda la cuenta en la base de datos
             usuario_creado = formulario.save()
-
-            # Crear su cliente asociado automacit
-            from .models import Cliente
 
             # Evitar duplicado por si existiera
             if not hasattr(usuario_creado, "cliente"):
@@ -556,7 +696,8 @@ def registro(request):
                     apellido = formulario.cleaned_data["last_name"],
                     email = formulario.cleaned_data["email"],
                     telefono = formulario.cleaned_data.get("telefono", ""),
-                    direccion = formulario.cleaned_data.get("direccion", "")
+                    direccion = formulario.cleaned_data.get("direccion", ""),
+                    rut = formulario.cleaned_data["rut"]
                 )
 
 
@@ -589,7 +730,7 @@ def registro(request):
 
 def cerrar_sesion(request):
     logout(request)
-    return redirect("iniciar_sesion")
+    return render(request, "logout.html")
 
 
 def error_404_view(request, exception):

@@ -44,6 +44,7 @@ class Producto(models.Model):
 class Pedido(models.Model):
     ESTADO_CHOICES = [
         ('PENDIENTE', 'Pendiente'),
+        ('PAGADO', "Pagado"),
         ('EN_PREPARACION', 'En preparación'),
         ('LISTO', 'Listo para despacho'),
         ('ENVIADO', 'Enviado'),

@@ -34,7 +34,7 @@
               <span class="badge bg-secondary">Stock: {{ producto.stock }}</span>
             </div>
 
-            {% if producto.stock > 1 %} 
+            {% if producto.stock >= 1 %} 
 
             <a class="btn btn-sm btn-outline-success"
               onclick='agregar_al_carrito({ "id": {{ producto.id }}, "nombre": "{{ producto.nombre|escapejs }}", "precio": {{ producto.precio }} })' >
